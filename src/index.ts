@@ -1,9 +1,18 @@
 import axios, { AxiosError, AxiosHeaders, AxiosResponse, RawAxiosRequestHeaders } from 'axios';
 import { CallPaginationAPIConfig, CallPaginationAPIResult, LazyLoaderConfig, PaginationAPIResultType } from './models/lazy-loader-config';
 import { PaginationResponse } from './models/pagination-response';
+import { LazyLoaderOutput } from './models/lazy-loader-output';
 
-export async function excuteLazyLoading<T>(config: LazyLoaderConfig<T>) {
-    let contentList: T[] = [];
+export async function useLazyLoading<T>(config: LazyLoaderConfig<T>, callback: (data: T[]) => void) {
+    // Create a new instance of LazyLoaderOutput with the callback
+    // let contentList = new LazyLoaderOutput<T>(callback);
+
+    // Pass the config to the excuteLazyLoading function
+    await excuteLazyLoading<T>(config, callback);
+}
+
+export async function excuteLazyLoading<T>(config: LazyLoaderConfig<T>, callback: (data: T[]) => void){
+    let contentList: LazyLoaderOutput<T> = new LazyLoaderOutput<T>(callback);
     let currentPageNumber: number = 1;
     let pageSize: number = config.pageSize ?? 20;
     let totalPageNumber: number = 1;
@@ -18,14 +27,14 @@ export async function excuteLazyLoading<T>(config: LazyLoaderConfig<T>) {
     
     if(initialContent.status == PaginationAPIResultType.SUCCESS){
         let paginationResponse: PaginationResponse<T> = initialContent.result as PaginationResponse<T>;
-        console.log('Total Content: ' + paginationResponse.totalElements);
-        contentList.push(...paginationResponse?.content ?? []);
+        contentList.data = paginationResponse?.content ?? [];
         totalPageNumber = paginationResponse.totalPages ?? 1;
         totalElements = paginationResponse.totalElements ?? 0;
         currentPageNumber += 1;
     }
 
     while(currentPageNumber <= totalPageNumber){
+        await timer(500);
         // Loop the API call until all content is loaded
         let initialContent: CallPaginationAPIResult = await callPaginationAPI({
             ...config,
@@ -34,21 +43,22 @@ export async function excuteLazyLoading<T>(config: LazyLoaderConfig<T>) {
         });
 
         if(initialContent.status == PaginationAPIResultType.SUCCESS){
-            console.log('Current page number' + currentPageNumber);
+            // console.log('Current page number' + currentPageNumber);
             
             let paginationResponse: PaginationResponse<T> = initialContent.result as PaginationResponse<T>;
-            contentList.push(...paginationResponse?.content ?? []);
+            contentList.data = paginationResponse?.content ?? [];
             totalPageNumber = paginationResponse.totalPages ?? 1;
             currentPageNumber += 1;
         }
     }
 
 
-    console.log(' ================= RESULT =================');
-    console.log('Total pages: ' + totalPageNumber);
-    console.log('Total elements: ', totalElements);
-    console.log('Total content loaded: ' + contentList.length);
-    
+    // console.log(' ================= RESULT =================');
+    // console.log('Total pages: ' + totalPageNumber);
+    // console.log('Total elements: ', totalElements);
+    // console.log('Total content loaded: ' + contentList.data.length);
+    // console.log(contentList.data.length);
+
 }
 
 export async function callPaginationAPI<T>(config: CallPaginationAPIConfig<T>): Promise<CallPaginationAPIResult> {
@@ -102,34 +112,8 @@ function isRequestOK(statusCode: number): boolean {
     return statusCode >= 200 && statusCode <= 299;
 }
 
-excuteLazyLoading({
-    url: 'http://localhost:8080/api/v1/devotee/pagination/filter',
-    headers: {
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzdXBlcmFkbWluIiwiaWF0IjoxNzAxODMxNzM4LCJleHAiOjE3MDM0NjYzMzd9.1olNMsqOIQsYiWYBuALqLeiysP1jVInxuGxhgsKmMXQ',
-    },
-    params: {
-        price: 80,
-        field: 'phoneNo1',
-        sortBy: 'updatedAt',
-        sortDir: 'desc'
-    }
-});
-
-// callPaginationAPI({
-//     url: 'http://localhost:8080/api/v1/devotee/pagination/filter',
-//     headers: {
-//         Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzdXBlcmFkbWluIiwiaWF0IjoxNzAxODMxNzM4LCJleHAiOjE3MDM0NjYzMzd9.1olNMsqOIQsYiWYBuALqLeiysP1jVInxuGxhgsKmMXQ',
-//     },
-//     params: {
-//         price: 80,
-//         field: 'phoneNo1',
-//         sortBy: 'updatedAt',
-//         sortDir: 'desc'
-//     }
-// });
+const timer = (ms: number | undefined) => new Promise(res => setTimeout(res, ms))
 
 export function add(a: number, b: number): number {
     return a + b;
 }
-  
-// console.log(add(3, 5)); //output: 8
