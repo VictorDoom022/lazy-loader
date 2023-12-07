@@ -25,7 +25,7 @@ test('adds two numbers correctly', () => {
   let dataReceived: any[] = [];
   await useLazyLoading<any>(config, (data) => {
     console.log('Data received');
-    dataReceived.push(data);
+    dataReceived.push(...data);
   });
   console.log('Final Result: ' + dataReceived.length);
 })

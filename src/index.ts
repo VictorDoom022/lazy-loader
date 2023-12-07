@@ -117,3 +117,29 @@ const timer = (ms: number | undefined) => new Promise(res => setTimeout(res, ms)
 export function add(a: number, b: number): number {
     return a + b;
 }
+
+/// DEMO
+async function demo()  {
+    let config: LazyLoaderConfig<any> = {
+        url: 'http://localhost:8080/api/v1/devotee/pagination/filter',
+        headers: {
+            Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzdXBlcmFkbWluIiwiaWF0IjoxNzAxODMxNzM4LCJleHAiOjE3MDM0NjYzMzd9.1olNMsqOIQsYiWYBuALqLeiysP1jVInxuGxhgsKmMXQ',
+        },
+        params: {
+            price: 80,
+            field: 'phoneNo1',
+            sortBy: 'updatedAt',
+            sortDir: 'desc'
+        },
+    };
+    
+    let dataReceived: any[] = [];
+    await useLazyLoading<any>(config, (data: any[]) => {
+        console.log('Data received');
+        dataReceived.push(...data);
+
+    });
+    console.log('Final Result: ' + dataReceived.length);
+}
+
+demo();
